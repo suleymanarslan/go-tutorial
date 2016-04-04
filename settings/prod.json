@@ -1,0 +1,5 @@
+{
+  "PrivateKeyPath": "/home/suleyman/work/src/api.jwt.auth/settings/keys/private_key",
+  "PublicKeyPath": "/home/suleyman/work/src/api.jwt.auth/settings/keys/public_key.pub",
+  "JWTExpirationDelta": 72
+}
