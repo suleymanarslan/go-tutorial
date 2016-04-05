@@ -12,4 +12,9 @@ func CreateUser(requestUser *models.User) (int, []byte) {
 	return http.StatusOK, []byte("")
 }
 
+func GetUser(requestUser *models.User) (models.User) {
+	userBackEnd := repositories.InitUserRepository()
+	user := userBackEnd.GetUser(requestUser)
+	return user
+}
 
