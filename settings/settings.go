@@ -8,8 +8,8 @@ import (
 )
 
 var environments = map[string]string{
-	"production":    "settings/prod.json",
-	"preproduction": "settings/pre.json",
+	"production":    "/home/suleyman/work/src/hoditgo/settings/prod.json",
+	"preproduction": "/home/suleyman/work/src/hoditgo/settings/pre.json",
 	"tests":         "../../settings/tests.json",
 }
 

@@ -5,14 +5,14 @@ import (
 	"hoditgo/services/models"
 	"hoditgo/settings"
 	"bufio"
-	"github.com/lonelycode/go-uuid/uuid"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	jwt "github.com/dgrijalva/jwt-go"
-	"golang.org/x/crypto/bcrypt"
 	"os"
 	"time"
+	"hoditgo/core/repositories"
+
 )
 
 type JWTAuthenticationBackend struct {
@@ -52,15 +52,9 @@ func (backend *JWTAuthenticationBackend) GenerateToken(userUUID string) (string,
 }
 
 func (backend *JWTAuthenticationBackend) Authenticate(user *models.User) bool {
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("testing"), 10)
-
-	testUser := models.User{
-		UUID:     uuid.New(),
-		Username: "haku",
-		Password: string(hashedPassword),
-	}
-
-	return user.Username == testUser.Username && bcrypt.CompareHashAndPassword([]byte(testUser.Password), []byte(user.Password)) == nil
+	userBackEnd := repositories.InitUserRepository()
+    isUserExists := userBackEnd.CheckUser(user.Email, user.Password)
+	return isUserExists
 }
 
 func (backend *JWTAuthenticationBackend) getTokenRemainingValidity(timestamp interface{}) int {

@@ -34,6 +34,25 @@ func (repo *UserRepository) CreateUser(user *models.User) {
     checkErr(err)
 }
 
+func (repo *UserRepository) CheckUser(email string, password string) (exists bool){
+    var Password string 
+    var err error
+    dbConn := mysql.Connect()
+    rows, err := dbConn.Query("Select Password from users Where Username = ?", email)
+    checkErr(err)
+    defer rows.Close()
+    for rows.Next(){
+        err = rows.Scan(&Password)
+        checkErr(err)
+    }
+
+    if Password == password {
+        return false
+    }
+
+    return true
+}
+
 func checkErr(err error) {
     if err != nil {
         panic(err)
