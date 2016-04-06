@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"bytes"
+	"strings"
 )
 
 var environments = map[string]string{
-	"production":    "/home/suleyman/work/src/hoditgo/settings/prod.json",
-	"preproduction": "/home/suleyman/work/src/hoditgo/settings/pre.json",
+	"production":    "settings/prod.json",
+	"preproduction": "settings/pre.json",
 	"tests":         "../../settings/tests.json",
 }
 
@@ -17,6 +20,9 @@ type Settings struct {
 	PrivateKeyPath     string
 	PublicKeyPath      string
 	JWTExpirationDelta int
+	DatabaseUserPassword string
+  	RedisPassword string
+    RedisPort string
 }
 
 var settings Settings = Settings{}
@@ -32,7 +38,14 @@ func Init() {
 }
 
 func LoadSettingsByEnv(env string) {
-	content, err := ioutil.ReadFile(environments[env])
+	var buffer bytes.Buffer
+
+	absPath, _ := filepath.Abs("$HODITGO")
+	buffer.WriteString(strings.Replace(absPath, "$HODITGO", "", 1))
+	buffer.WriteString(environments[env])
+	fmt.Println(buffer.String())
+
+	content, err := ioutil.ReadFile(buffer.String())
 	if err != nil {
 		fmt.Println("Error while reading config file", err)
 	}

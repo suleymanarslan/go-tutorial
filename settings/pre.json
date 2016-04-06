@@ -1,5 +1,7 @@
 {
-  "PrivateKeyPath": "/home/suleyman/work/src/hoditgo/settings/keys/private_key",
-  "PublicKeyPath": "/home/suleyman/work/src/hoditgo/settings/keys/public_key.pub",
-  "JWTExpirationDelta": 72
+  "PrivateKeyPath": "settings/keys/private_key",
+  "PublicKeyPath": "settings/keys/public_key.pub",
+  "JWTExpirationDelta": 72,
+  "DatabaseUserPassword" : "root:354216@/hoditgo",
+  "RedisPassword" : "354216"
 }

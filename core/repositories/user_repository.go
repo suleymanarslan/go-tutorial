@@ -1,9 +1,9 @@
 package repositories
 
 import (
-	"hoditgo/core/mysql"
-	"hoditgo/services/models"
-	"golang.org/x/crypto/bcrypt"
+    "hoditgo/core/mysql"
+    "hoditgo/services/models"
+    "golang.org/x/crypto/bcrypt"
     "fmt"
     "crypto/rand"
 )
@@ -25,32 +25,27 @@ func InitUserRepository() *UserRepository {
 
 func (repo *UserRepository) CreateUser(user *models.User) {
     var err error
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
-	user.Password = string(hashedPassword)
-	dbConn := mysql.Connect()
-	stmt, err := dbConn.Prepare("INSERT users SET UUID=?,Username=?,Password=?,Email=?")
-	checkErr(err)
-	_, err = stmt.Exec(pseudo_uuid(), user.Username, user.Password, user.Email)
+    hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+    dbConn := mysql.Connect()
+    stmt, err := dbConn.Prepare("INSERT users SET UUID=?,Username=?,Password=?,Email=?")
+    checkErr(err)
+    _, err = stmt.Exec(pseudo_uuid(), user.Username, hashedPassword, user.Email)
     checkErr(err)
 }
 
 func (repo *UserRepository) CheckUser(email string, password string) (exists bool){
-    var Password string 
+    var Email string 
     var err error
     dbConn := mysql.Connect()
-    rows, err := dbConn.Query("Select Password from users Where Username = ?", email)
+    rows, err := dbConn.Query("Select Email from users Where Email = ?", email)
     checkErr(err)
     defer rows.Close()
     for rows.Next(){
-        err = rows.Scan(&Password)
+        err = rows.Scan(&Email)
         checkErr(err)
     }
 
-    if Password == password {
-        return false
-    }
-
-    return true
+    return Email == email    
 }
 
 func checkErr(err error) {
@@ -72,5 +67,6 @@ func pseudo_uuid() (uuid string) {
 
     return
 }
+
 
 

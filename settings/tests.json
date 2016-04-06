@@ -1,5 +1,8 @@
 {
-  "PrivateKeyPath": "/home/suleyman/work/src/api.jwt.auth/settings/keys/private_key",
-  "PublicKeyPath": "/home/suleyman/work/src/api.jwt.auth/settings/keys/public_key.pub",
-  "JWTExpirationDelta": 72
+  "PrivateKeyPath": "/settings/keys/private_key",
+  "PublicKeyPath": "/settings/keys/public_key.pub",
+  "JWTExpirationDelta": 72,
+  "DatabaseUserPassword" : "root:354216@/hoditgo",
+  "RedisPassword" : "354216",
+  "RedisPort" : ":6379"
 }

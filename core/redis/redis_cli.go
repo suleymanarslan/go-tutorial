@@ -2,6 +2,7 @@ package redis
 
 import (
 	"github.com/garyburd/redigo/redis"
+	"hoditgo/settings"
 )
 
 type RedisCli struct {
@@ -15,13 +16,13 @@ func Connect() (conn *RedisCli) {
 		instanceRedisCli = new(RedisCli)
 		var err error
 
-		instanceRedisCli.conn, err = redis.Dial("tcp", ":6379")
+		instanceRedisCli.conn, err = redis.Dial("tcp",  settings.Get().RedisPort)
 
 		if err != nil {
 			panic(err)
 		}
 
-		if _, err := instanceRedisCli.conn.Do("AUTH", "Brainattica"); err != nil {
+		if _, err := instanceRedisCli.conn.Do("AUTH", settings.Get().RedisPassword); err != nil {
 			instanceRedisCli.conn.Close()
 			panic(err)
 		}

@@ -12,7 +12,9 @@ import (
 	"os"
 	"time"
 	"hoditgo/core/repositories"
-
+	"bytes"
+	"path/filepath"
+	"strings"
 )
 
 type JWTAuthenticationBackend struct {
@@ -85,7 +87,12 @@ func (backend *JWTAuthenticationBackend) IsInBlacklist(token string) bool {
 }
 
 func getPrivateKey() *rsa.PrivateKey {
-	privateKeyFile, err := os.Open(settings.Get().PrivateKeyPath)
+	var buff bytes.Buffer
+	absPath, _ := filepath.Abs("$HODITGO")
+	buff.WriteString(strings.Replace(absPath, "$HODITGO", "", 1))
+	buff.WriteString(settings.Get().PrivateKeyPath)
+
+	privateKeyFile, err := os.Open(buff.String())
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +118,13 @@ func getPrivateKey() *rsa.PrivateKey {
 }
 
 func getPublicKey() *rsa.PublicKey {
-	publicKeyFile, err := os.Open(settings.Get().PublicKeyPath)
+	var buff bytes.Buffer
+
+	absPath, _ := filepath.Abs("$HODITGO")
+	buff.WriteString(strings.Replace(absPath, "$HODITGO", "", 1))
+	buff.WriteString(settings.Get().PublicKeyPath)
+
+	publicKeyFile, err := os.Open(buff.String())
 	if err != nil {
 		panic(err)
 	}
