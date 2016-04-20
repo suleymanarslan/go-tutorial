@@ -11,7 +11,7 @@ https://www.digitalocean.com/community/tutorials/how-to-install-and-use-redis
 
 Install Mysql 
 
-Declare your following environment variables:
+Declare following environment variables:
 
 go path.
 export PATH=$PATH:/usr/local/go/bin 
@@ -49,7 +49,7 @@ Try to create new user with the following command:
 curl -H "Content-Type: application/json" -X POST -d '{"Username":"suleyman","Password":"dummy","Email": "me@example.com"}' http://localhost:5000/create-user
 
 Try to login with the following command:
-curl -H "Content-Type: application/json" -X POST -d '{"Email":"me@suleymanarslan.com","Password":"354216"}' http://localhost:5000/token-auth
+curl -H "Content-Type: application/json" -X POST -d '{"Email":"me@example.com","Password":"123qweasd"}' http://localhost:5000/token-auth
 
 When you successfully logged on to the system you will get a JWT like the following one.
 
