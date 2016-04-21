@@ -46,8 +46,14 @@ var socket = new WebSocket("ws://localhost:5000/signal");
 
 if (room !== '') {
   console.log('Create or join room', room);
-  var msg = '{"type": "createjoin", "label": "ds","id": "ds","candidate": "ds","room": "'+room+'"}';
-  sendMessage(msg);
+  //var msg = '{"type": "createjoin", "label": "ds","id": "ds","candidate": "ds","room": "'+room+'"}';
+  var msg = {};
+  msg.type = "createjoin";
+  msg.label = "";
+  msg.candidate = "";
+  msg.room = room;
+
+  sendMessage(msg, "common");
 }
 
 var constraints = {video: true};
@@ -73,8 +79,15 @@ function handleUserMedia(stream) {
   localStream = stream;
   attachMediaStream(localVideo, stream);
   console.log('Adding local stream.');
-    var msg = '{"type": "gotusermedia", "label": "ds","id": "ds","candidate": "ds"}'
-  sendMessage(msg);
+  msg = {}
+  msg.type = "gotusermedia";
+  msg.label = "";
+  msg.id = "gotusermedia";
+  msg.candidate = "";
+  msg.room = "room"
+
+  //var msg = '{"type": "gotusermedia", "label": "ds","id": "ds","candidate": "ds"}'
+  sendMessage(msg, "common");
   if (isInitiator) {
     checkAndStart();
   }
@@ -85,8 +98,16 @@ function handleUserMediaError(error){
 }
 
  socket.onmessage = function(e) {
+   var msg;
+   var type="";
 
-    switch(event.data) {
+   try {
+     var msg = JSON.parse(event.data);
+     type = msg.type;
+   } catch (e) {
+     type = event.data;
+   }
+    switch(type) {
         case 'created':
             console.log('Created room ' + room);
             isInitiator = true;
@@ -107,21 +128,20 @@ function handleUserMediaError(error){
             if (!isInitiator && !isStarted) {
                   checkAndStart();
             }
-            pc.setRemoteDescription(new RTCSessionDescription(message));
+            pc.setRemoteDescription(new RTCSessionDescription(msg));
             doAnswer();
             break;
         case 'answer':
             if (isStarted)
             {
-              pc.setRemoteDescription(new RTCSessionDescription(message));
+              pc.setRemoteDescription(new RTCSessionDescription(msg));
             }
             break;
         case 'candidate':
             if (isStarted)
             {
-                var candidate = new RTCIceCandidate({sdpMLineIndex:message.label,
-                candidate:message.candidate});
-                pc.addIceCandidate(candidate);
+              var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label,candidate:msg.candidate});
+              pc.addIceCandidate(candidate);
             }
             break;
         case 'bye':
@@ -138,12 +158,15 @@ function handleUserMediaError(error){
 };
 
 
-function sendMessage(message){
+function sendMessage(message, baseMessageType){
 
+  var messageToSend = {};
+  messageToSend.type = baseMessageType;
+  messageToSend.Message = message;
   waitForSocketConnection(socket, function() {
-             socket.send(message);
+             socket.send(JSON.stringify(messageToSend));
         });
-  console.log('Sending message: ', message);
+  console.log('Sending message: ', messageToSend);
 
 }
 
@@ -247,7 +270,7 @@ function handleIceCandidate(event) {
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
-      candidate: event.candidate.candidate});
+      candidate: event.candidate.candidate}, "rtc");
   } else {
     console.log('End of candidates.');
   }
@@ -271,7 +294,7 @@ function doAnswer() {
 // and createAnswer()
 function setLocalAndSendMessage(sessionDescription) {
   pc.setLocalDescription(sessionDescription);
-  sendMessage(sessionDescription);
+  sendMessage(sessionDescription, "rtc");
 }
 
 /////////////////////////////////////////////////////////
@@ -295,7 +318,7 @@ function hangup() {
       label: '',
       id: '',
       candidate: ''}
-  sendMessage(msg);
+  sendMessage(msg, "common");
 
 }
 

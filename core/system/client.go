@@ -1,6 +1,7 @@
 package system
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -67,6 +68,7 @@ func (c *client) readPump() {
 	}()
 
 	var message Message
+	var baseMessage RawMessage
 
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -77,37 +79,64 @@ func (c *client) readPump() {
 
 	for {
 
-		err := c.ws.ReadJSON(&message)
+		err := c.ws.ReadJSON(&baseMessage)
 
-		if message.MessageType == "createjoin" {
-			room := rooms[message.Room]
-			fmt.Println("room count", len(room.Clients))
+		if err != nil {
+			fmt.Println("Panic in getting base message.")
+			panic(err)
+		}
 
-			var returnMessage Message
-			if reflect.DeepEqual((Room{}), room) {
-				var clients []string
+		fmt.Println(baseMessage.BaseMessageType)
 
-				room = Room{Id: message.Room, Clients: clients}
-				room.Clients = append(room.Clients, "suleyman")
-				returnMessage.MessageType = "created"
-				returnMessage.Room = message.Room
-				rooms[message.Room] = room
-				fmt.Println("room count2", len(room.Clients))
-			} else {
-				if len(room.Clients) < 2 {
-					Hub.broadcast <- "join"
-					fmt.Println("room count3", len(room.Clients))
-					room.Clients = append(room.Clients, "test")
-					returnMessage.MessageType = "joined"
-					returnMessage.Room = message.Room
-					rooms[message.Room] = room
-				}
+		if baseMessage.BaseMessageType == "common" {
+
+			data := baseMessage.Message
+			Source := (*json.RawMessage)(&data)
+			err := json.Unmarshal(*Source, &message)
+
+			if err != nil {
+				fmt.Println("Panic in getting common message.")
+				panic(err)
 			}
 
-			c.send <- []byte(returnMessage.MessageType)
-		} else if message.MessageType == "gotusermedia" {
+			if message.MessageType == "createjoin" {
+				room := rooms[message.Room]
+				fmt.Println("room count", len(room.Clients))
 
-			Hub.broadcast <- message.MessageType
+				var returnMessage Message
+				if reflect.DeepEqual((Room{}), room) {
+					var clients []string
+
+					room = Room{Id: message.Room, Clients: clients}
+					room.Clients = append(room.Clients, "suleyman")
+					returnMessage.MessageType = "created"
+					returnMessage.Room = message.Room
+					rooms[message.Room] = room
+					fmt.Println("room count2", len(room.Clients))
+				} else {
+					if len(room.Clients) < 2 {
+						Hub.broadcast <- "join"
+						fmt.Println("room count3", len(room.Clients))
+						room.Clients = append(room.Clients, "test")
+						returnMessage.MessageType = "joined"
+						returnMessage.Room = message.Room
+						rooms[message.Room] = room
+					}
+				}
+
+				c.send <- []byte(returnMessage.MessageType)
+			} else if message.MessageType == "gotusermedia" {
+
+				Hub.broadcast <- message.MessageType
+			}
+		} else if baseMessage.BaseMessageType == "rtc" {
+
+			if err != nil {
+				fmt.Println("Panic in getting rtc message.")
+				panic(err)
+			}
+
+			Hub.broadcast <- string(baseMessage.Message)
 
 		}
 
