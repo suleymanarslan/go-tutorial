@@ -11,8 +11,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var rooms map[string]Room
-
 const (
 	writeWait      = 10 * time.Second
 	pongWait       = 60 * time.Second
@@ -23,16 +21,12 @@ const (
 type client struct {
 	ws   *websocket.Conn
 	send chan []byte
+	id   string
 }
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  maxMessageSize,
 	WriteBufferSize: maxMessageSize,
-}
-
-func InitiateRooms() {
-	fmt.Println("InitiateRooms")
-	rooms = make(map[string]Room)
 }
 
 func ServeWs(w http.ResponseWriter, r *http.Request) {
@@ -100,34 +94,33 @@ func (c *client) readPump() {
 			}
 
 			if message.MessageType == "createjoin" {
-				room := rooms[message.Room]
-				fmt.Println("room count", len(room.Clients))
+				room := Rooms[message.Room]
+				fmt.Println("room count", len(room.clients))
 
 				var returnMessage Message
 				if reflect.DeepEqual((Room{}), room) {
-					var clients []string
+					var clients []*client
 
-					room = Room{Id: message.Room, Clients: clients}
-					room.Clients = append(room.Clients, "suleyman")
-					returnMessage.MessageType = "created"
+					room = Room{Id: message.Room, clients: clients}
+					room.clients = append(room.clients, &client{c.ws, c.send, "initiator"})
 					returnMessage.Room = message.Room
-					rooms[message.Room] = room
-					fmt.Println("room count2", len(room.Clients))
+					Rooms[message.Room] = room
+					room.clients[0].send <- []byte("created")
+					fmt.Println("room count2", len(room.clients))
 				} else {
-					if len(room.Clients) < 2 {
-						Hub.broadcast <- "join"
-						fmt.Println("room count3", len(room.Clients))
-						room.Clients = append(room.Clients, "test")
-						returnMessage.MessageType = "joined"
-						returnMessage.Room = message.Room
-						rooms[message.Room] = room
+					if len(room.clients) < 2 {
+						brIn := broadcastIn{"join", message.Room}
+						Hub.broadcastin <- brIn
+						room.clients = append(room.clients, &client{c.ws, c.send, "joiner"})
+						Rooms[message.Room] = room
+						room.clients[1].send <- []byte("joined")
 					}
 				}
 
-				c.send <- []byte(returnMessage.MessageType)
 			} else if message.MessageType == "gotusermedia" {
-
-				Hub.broadcast <- message.MessageType
+				brTo := broadcastTo{"gotusermedia", message.Room, *c}
+				fmt.Println("Room >>>", message.Room)
+				Hub.broadcastto <- brTo
 			}
 		} else if baseMessage.BaseMessageType == "rtc" {
 
@@ -136,8 +129,8 @@ func (c *client) readPump() {
 				panic(err)
 			}
 
-			Hub.broadcast <- string(baseMessage.Message)
-
+			brTo := broadcastTo{string(baseMessage.Message), baseMessage.Room, *c}
+			Hub.broadcastto <- brTo
 		}
 
 		if err != nil {
@@ -175,6 +168,6 @@ func (c *client) writePump() {
 
 func (c *client) write(mt int, message []byte) error {
 	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
-	fmt.Println("sending....", string(message))
+	fmt.Println("sending....", string(message)+c.id)
 	return c.ws.WriteMessage(mt, message)
 }

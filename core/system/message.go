@@ -5,6 +5,7 @@ import "encoding/json"
 type RawMessage struct {
 	BaseMessageType string `json:"type" form:"type"`
 	Message         json.RawMessage
+	Room            string `json:"room" form:"room"`
 }
 
 type Message struct {

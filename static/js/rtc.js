@@ -24,6 +24,8 @@ var localStream;
 var remoteStream;
 var pc;
 
+var room;
+
 var pc_config = webrtcDetectedBrowser === 'firefox' ?
   {'iceServers':[{'urls':'stun:23.21.150.121'}]} : // IP address
   {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]};
@@ -58,7 +60,6 @@ if (room !== '') {
 
 var constraints = {video: true};
 
-navigator.getUserMedia(constraints, handleUserMedia, handleUserMediaError);
 console.log('Getting user media with constraints', constraints);
 
 function waitForSocketConnection(socket, callback){
@@ -84,7 +85,7 @@ function handleUserMedia(stream) {
   msg.label = "";
   msg.id = "gotusermedia";
   msg.candidate = "";
-  msg.room = "room"
+  msg.room = room
 
   //var msg = '{"type": "gotusermedia", "label": "ds","id": "ds","candidate": "ds"}'
   sendMessage(msg, "common");
@@ -109,7 +110,9 @@ function handleUserMediaError(error){
    }
     switch(type) {
         case 'created':
+            navigator.getUserMedia(constraints, handleUserMedia, handleUserMediaError);
             console.log('Created room ' + room);
+            room = room
             isInitiator = true;
             break;
         case 'full':
@@ -119,6 +122,7 @@ function handleUserMediaError(error){
             isChannelReady = true;
             break;
         case 'joined':
+            navigator.getUserMedia(constraints, handleUserMedia, handleUserMediaError);
             isChannelReady = true;
             break;
         case 'gotusermedia':
@@ -128,7 +132,10 @@ function handleUserMediaError(error){
             if (!isInitiator && !isStarted) {
                   checkAndStart();
             }
-            pc.setRemoteDescription(new RTCSessionDescription(msg));
+
+            var remoteDescription = new RTCSessionDescription(msg)
+            pc.setRemoteDescription(remoteDescription);
+
             doAnswer();
             break;
         case 'answer':
@@ -162,6 +169,7 @@ function sendMessage(message, baseMessageType){
 
   var messageToSend = {};
   messageToSend.type = baseMessageType;
+  messageToSend.room = room;
   messageToSend.Message = message;
   waitForSocketConnection(socket, function() {
              socket.send(JSON.stringify(messageToSend));
@@ -285,6 +293,16 @@ function onSignalingError(error) {
   console.log('Failed to create signaling message : ' + error.name);
 }
 
+function onRemoteDescriptionSuccess(success)
+{
+    doAnswer();
+}
+
+function onRemoteDescriptionError(error)
+{
+
+}
+
 function doAnswer() {
   console.log('Sending answer to peer.');
   pc.createAnswer(setLocalAndSendMessage, onSignalingError, sdpConstraints);
@@ -336,5 +354,3 @@ function stop() {
   pc = null;
   sendButton.disabled=true;
 }
-
-///////////////////////////////////////////
