@@ -6,6 +6,8 @@ CREATE TABLE Interviews
     CategoryId VARCHAR(50) NOT NULL,
     Ranking INT(11) DEFAULT '-1' NOT NULL,
     Description VARCHAR(250) NOT NULL,
+    Name VARCHAR(20) NOT NULL,
+    IsActive BIT(1) DEFAULT b'1' NOT NULL,
     CONSTRAINT Interviews_InterviewCategories_Id_fk FOREIGN KEY (CategoryId) REFERENCES InterviewCategories (Id),
     CONSTRAINT Interviews_Interviewers_Id_fk FOREIGN KEY (InterviewerId) REFERENCES Interviewers (Id)
 );
@@ -50,3 +52,15 @@ CREATE TABLE InterviewCategories
     CategoryName VARCHAR(50) NOT NULL,
     ParentId VARCHAR(50)
 );
+CREATE TABLE InterviewResult
+(
+    Id VARCHAR(50) NOT NULL,
+    InterviewScheduleId VARCHAR(50) NOT NULL,
+    Point INT(11) NOT NULL,
+    Pros VARCHAR(200) NOT NULL,
+    Cons VARCHAR(50) NOT NULL,
+    EvaluationReport VARCHAR(250) NOT NULL,
+    CONSTRAINT InterviewResult_InterviewSchedule_Id_fk FOREIGN KEY (InterviewScheduleId) REFERENCES InterviewSchedule (Id)
+);
+CREATE UNIQUE INDEX InterviewResult_Id_uindex ON InterviewResult (Id);
+CREATE INDEX InterviewResult_InterviewSchedule_Id_fk ON InterviewResult (InterviewScheduleId);
