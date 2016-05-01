@@ -1,8 +1,15 @@
 package models
 
+import
+(
+	"time"
+)
+
 type User struct {
-	UUID     string `json:"uuid" form:"-"`
+	Id     string `json:"uuid" form:"-"`
 	Username string `json:"username" form:"username"`
 	Password string `json:"password" form:"password"`
 	Email string `json:"email" form:"email"`
+	DateJoined time.Time `json:"datejoined" form:"datejoined"`
+	IsActive bool `json:"active" form:"active"`
 }

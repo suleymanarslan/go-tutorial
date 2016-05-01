@@ -93,6 +93,9 @@ func (c *client) readPump() {
 			} else if message.MessageType == "gotusermedia" {
 				brTo := broadcastTo{"gotusermedia", message.Room, *c}
 				Hub.broadcastto <- brTo
+			} else if message.MessageType == "bye" {
+				unreg := unregister{c, message.Room }
+				Hub.unregister <- unreg
 			}
 		} else if baseMessage.BaseMessageType == "rtc" {
 
