@@ -3,20 +3,16 @@ package system
 import ("fmt")
 
 type hub struct {
-	// Registered clients
 	roomClients map[string][]*client
 
-	// Inbound messages
 	broadcast chan string
 
 	broadcastto chan broadcastTo
 
 	broadcastin chan broadcastIn
 
-	// Register requests
 	register chan register
 
-	// Unregister requests
 	unregister chan unregister
 
 	join chan string
@@ -63,13 +59,15 @@ func (h *hub) Run() {
 		select {
 		case c := <-h.register:
 		if h.roomClients[c.clientRoom] == nil {
+			h.content = "created"
 			h.roomClients[c.clientRoom] =append(h.roomClients[c.clientRoom], c.newClient)
-			c.newClient.send <- []byte("created")
+			c.newClient.send <- []byte(h.content)
 		} else{
 			h.content = "join"
 			h.broadcastMessageIn(c.clientRoom)
+			h.content = "joined"
 			h.roomClients[c.clientRoom] =append(h.roomClients[c.clientRoom], c.newClient)
-			c.newClient.send <- []byte("joined")
+			c.newClient.send <- []byte(h.content)
 		}
 			break
 
@@ -126,7 +124,6 @@ func (h *hub) broadcastMessageIn(room string) {
 		case c.send <- []byte(h.content):
 			break
 
-		// We can't reach the client
 		default:
 			close(c.send)
 		}

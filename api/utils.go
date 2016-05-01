@@ -22,5 +22,11 @@ func (util *Utils) GenerateUUID() (uuid string) {
     return
 }
 
+func (util *Utils) CheckErr(err error) {
+    if err != nil {
+        panic(err)
+    }
+}
+
 
 
