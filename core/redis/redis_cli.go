@@ -44,3 +44,13 @@ func (redisCli *RedisCli) SetValue(key string, value string, expiration ...inter
 func (redisCli *RedisCli) GetValue(key string) (interface{}, error) {
 	return redisCli.conn.Do("GET", key)
 }
+
+func (redisCli *RedisCli) AddUserToRoom(userName string, roomName string)  {
+	 redisCli.conn.Do("LPUSH", roomName, userName)
+}
+
+func (redisCli *RedisCli) RoomExists(userName string, roomName string ) (interface{}, error){
+	return redisCli.conn.Do("EXISTS", roomName)
+}
+
+

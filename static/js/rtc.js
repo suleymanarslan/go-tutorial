@@ -207,7 +207,7 @@ function createPeerConnection() {
   if (isInitiator) {
     try {
       sendChannel = pc.createDataChannel("sendDataChannel",
-        {reliable: true});
+        {reliable: false});
       trace('Created send data channel');
     } catch (e) {
       alert('Failed to create data channel. ');
@@ -241,7 +241,7 @@ function handleMessage(event) {
   receiveTextarea.value += event.data + '\n';
 }
 
-function handleSendChannelStateChange() {
+function handleSendChannelStateChange(event) {
   var readyState = sendChannel.readyState;
   trace('Send channel state is: ' + readyState);
   // If channel ready, enable user's input
@@ -252,7 +252,7 @@ function handleSendChannelStateChange() {
     sendButton.disabled = false;
   } else {
     dataChannelSend.disabled = true;
-    sendButton.disabled = true;
+    sendButton.disabled = false;
   }
 }
 
@@ -266,8 +266,8 @@ function handleReceiveChannelStateChange() {
       dataChannelSend.placeholder = "";
       sendButton.disabled = false;
     } else {
-      dataChannelSend.disabled = true;
-      sendButton.disabled = true;
+      dataChannelSend.disabled = false;
+      sendButton.disabled = false;
     }
 }
 
@@ -352,5 +352,5 @@ function stop() {
   if (receiveChannel) receiveChannel.close();
   if (pc) pc.close();
   pc = null;
-  sendButton.disabled=true;
+  sendButton.disabled=false;
 }

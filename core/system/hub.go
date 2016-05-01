@@ -1,10 +1,10 @@
 package system
 
-import "fmt"
+import ("fmt")
 
 type hub struct {
 	// Registered clients
-	clients map[*client]bool
+	roomClients map[string][]*client
 
 	// Inbound messages
 	broadcast chan string
@@ -14,10 +14,10 @@ type hub struct {
 	broadcastin chan broadcastIn
 
 	// Register requests
-	register chan *client
+	register chan register
 
 	// Unregister requests
-	unregister chan *client
+	unregister chan unregister
 
 	join chan string
 
@@ -37,13 +37,23 @@ type broadcastTo struct {
 	client  client
 }
 
+type unregister struct{
+	leavingClient *client
+	clientRoom string
+}
+
+type register struct{
+	newClient *client
+	clientRoom string
+	}
+
 var Hub = hub{
 	broadcast:   make(chan string),
 	broadcastin: make(chan broadcastIn),
 	broadcastto: make(chan broadcastTo),
-	register:    make(chan *client),
-	unregister:  make(chan *client),
-	clients:     make(map[*client]bool),
+	register:    make(chan register),
+	unregister:  make(chan unregister),
+	roomClients: make(map[string][]*client),
 	content:     "",
 	room:        "",
 }
@@ -52,15 +62,26 @@ func (h *hub) Run() {
 	for {
 		select {
 		case c := <-h.register:
-			h.clients[c] = true
-			c.send <- []byte(h.content)
+		if h.roomClients[c.clientRoom] == nil {
+			h.roomClients[c.clientRoom] =append(h.roomClients[c.clientRoom], c.newClient)
+			c.newClient.send <- []byte("created")
+		} else{
+			h.content = "join"
+			h.broadcastMessageIn(c.clientRoom)
+			h.roomClients[c.clientRoom] =append(h.roomClients[c.clientRoom], c.newClient)
+			c.newClient.send <- []byte("joined")
+		}
 			break
 
 		case c := <-h.unregister:
-			_, ok := h.clients[c]
+			_, ok := h.roomClients[c.clientRoom]
 			if ok {
-				delete(h.clients, c)
-				close(c.send)
+				for index := 0; index < len(h.roomClients[c.clientRoom]); index++ {
+					if h.roomClients[c.clientRoom][index] == c.leavingClient {
+						h.roomClients[c.clientRoom] = append(h.roomClients[c.clientRoom][:index], h.roomClients[c.clientRoom][index + 1:]...)
+					}
+				}
+				close(c.leavingClient.send)
 			}
 			break
 		case m := <-h.broadcast:
@@ -81,12 +102,9 @@ func (h *hub) Run() {
 
 func (h *hub) broadcastMessageTo(room string, cli client) {
 	var clients []*client
-	clients = getClientsFromRoom(room)
+	clients = h.roomClients[room]
 	fmt.Println("broadcastMessageTo", len(clients))
 	for _, c := range clients {
-		fmt.Println("client id>>>>", cli.id)
-		fmt.Println("c id>>>>", c.id)
-		fmt.Println(cli.ws == c.ws)
 		if cli.ws != c.ws {
 			fmt.Println("broadcastMessageTo", c.id)
 			select {
@@ -94,7 +112,6 @@ func (h *hub) broadcastMessageTo(room string, cli client) {
 				break
 			default:
 				close(c.send)
-				delete(h.clients, c)
 			}
 		}
 	}
@@ -102,12 +119,8 @@ func (h *hub) broadcastMessageTo(room string, cli client) {
 
 func (h *hub) broadcastMessageIn(room string) {
 	var clients []*client
-	clients = getClientsFromRoom(room)
-	fmt.Println("broadcastMessagein", len(clients))
-
+	clients =  h.roomClients[room]
 	for _, c := range clients {
-		fmt.Println("broadcastMessageIn", c.id)
-
 		select {
 
 		case c.send <- []byte(h.content):
@@ -116,22 +129,20 @@ func (h *hub) broadcastMessageIn(room string) {
 		// We can't reach the client
 		default:
 			close(c.send)
-			delete(h.clients, c)
 		}
 	}
 }
 
 func (h *hub) broadcastMessage() {
-	fmt.Println("broadcastingggg")
-	for c := range h.clients {
+	for _, value := range h.roomClients {
+		for _, c:= range value{
 		select {
 		case c.send <- []byte(h.content):
 			break
-
-		// We can't reach the client
 		default:
 			close(c.send)
-			delete(h.clients, c)
+		}			
 		}
+
 	}
 }
