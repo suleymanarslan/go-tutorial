@@ -2,7 +2,7 @@
   "PrivateKeyPath": "/settings/keys/private_key",
   "PublicKeyPath": "/settings/keys/public_key.pub",
   "JWTExpirationDelta": 72,
-   "DatabaseUserPassword" : "root:354216@/hoditgo",
+   "DatabaseUserPassword" : "root:354216@/hoditgo?parseTime=true",
   "RedisPassword" : "354216",
   "RedisPort" : ":6379"
 }

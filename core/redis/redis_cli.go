@@ -21,8 +21,11 @@ func Connect() (conn *RedisCli) {
 		if err != nil {
 			panic(err)
 		}
+		
+		password := settings.Get().RedisPassword
+		_, err = instanceRedisCli.conn.Do("AUTH", password)
 
-		if _, err := instanceRedisCli.conn.Do("AUTH", settings.Get().RedisPassword); err != nil {
+		if err != nil {
 			instanceRedisCli.conn.Close()
 			panic(err)
 		}

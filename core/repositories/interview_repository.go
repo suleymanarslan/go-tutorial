@@ -4,29 +4,31 @@ import (
     "hoditgo/core/mysql"
     "hoditgo/services/models"
     "hoditgo/api"
+    "database/sql"
+
 )
 
 type InterviewRepository struct {
+   dbConnection *sql.DB
 }
 
 var util api.Utils
-
 var interviewRepository *InterviewRepository = nil
 
-func InitInterviewRepo() *InterviewRepository {
+func InitInterviewRepository() *InterviewRepository {
     if interviewRepository == nil {
         interviewRepository = &InterviewRepository{
         }
     }
-
+    
+    interviewRepository.dbConnection = mysql.Connect()
     return interviewRepository
 }
 
 
 func (repo *InterviewRepository) CreateInterview(interview *models.Interview) {
     var err error
-    dbConn := mysql.Connect()
-    stmt, err := dbConn.Prepare("INSERT Interviews SET Id=?, Name=? CategoryId=?,Description=?,InterviewerId=?, IsFeatured=?")
+    stmt, err := interviewRepository.dbConnection.Prepare("INSERT INTO Interviews SET Id=?, Name=? CategoryId=?,Description=?,InterviewerId=?, IsFeatured=?")
     util.CheckErr(err)
     _, err = stmt.Exec(util.GenerateUUID(), interview.CategoryId, interview.Description, interview.InterviewerId, interview.IsFeatured)
     util.CheckErr(err)
@@ -34,36 +36,60 @@ func (repo *InterviewRepository) CreateInterview(interview *models.Interview) {
 
 func (repo *InterviewRepository) UpdateInterview(interview *models.Interview) {
       var err error
-    dbConn := mysql.Connect()
-    stmt, err := dbConn.Prepare("UPDATE Interviews SET (Name, CategoryId, Description, IsFeatured, IsActive) VALUES(?,?,?,?,?) WHERE Id = ?")
+    stmt, err := interviewRepository.dbConnection.Prepare("UPDATE Interviews SET Name = ?, CategoryId = ?, Description = ?, IsFeatured = ?, IsActive = ? WHERE Id = ?")
     util.CheckErr(err)
     _, err = stmt.Exec(interview.Name, interview.CategoryId, interview.Description, interview.IsFeatured, interview.Id, true)
     util.CheckErr(err)
 }
 
 
-func (repo *InterviewRepository) GetInterviewById(id string) {
-      var err error
-    dbConn := mysql.Connect()
-    stmt, err := dbConn.Prepare("SELECT Name, CategoryId, Description, InterviewerId, IsFeatured WHERE Id = ? AND IsActive = ?")
+func (repo *InterviewRepository) GetInterviewById(id string) (models.Interview) {
+    var result models.Interview
+    
+    stmt, err := interviewRepository.dbConnection.Prepare("SELECT Name, CategoryId, Description, InterviewerId, IsFeatured FROM Interviews WHERE Id = ? AND IsActive = ?")
     util.CheckErr(err)
-    _, err = stmt.Exec(id, true)
+    row := stmt.QueryRow(id, true)
+    err = row.Scan(&result.Name, &result.CategoryId, &result.Description, &result.InterviewerId, &result.IsFeatured)
     util.CheckErr(err)
+    return result
 }
 
-func (repo *InterviewRepository) GetInterviewByName(name string) {
-      var err error
-    dbConn := mysql.Connect()
-    stmt, err := dbConn.Prepare("SELECT Name, CategoryId, Description, InterviewerId, IsFeatured WHERE Name = ? AND IsActive = ?")
+func (repo *InterviewRepository) GetInterviewByName(name string) ([]models.Interview) {
+    var  results []models.Interview
+    var result models.Interview
+    
+    stmt, err := interviewRepository.dbConnection.Prepare("SELECT Name, CategoryId, Description, InterviewerId, IsFeatured FROM Interviews WHERE Name = ? AND IsActive = ?")
     util.CheckErr(err)
-    _, err = stmt.Exec(name, true)
+    rows, err := stmt.Query(name, true)
+    
+    for rows.Next() {
+        err = rows.Scan(&result.Name, &result.CategoryId, &result.Description, &result.InterviewerId, &result.IsFeatured)
+        results = append(results, result)
+    }
+    
     util.CheckErr(err)
+    return results
+}
+
+func (repo *InterviewRepository) GetAllInterviews(offset int) ([]models.Interview){
+    var  results []models.Interview
+    var result models.Interview
+
+    stmt, err := interviewRepository.dbConnection.Prepare("SELECT Name, CategoryId, Description, InterviewerId, IsFeatured FROM Interviews WHERE AND IsActive = ?")
+    util.CheckErr(err)
+    rows, err := stmt.Query()
+    for rows.Next() {
+        err = rows.Scan(&result.Name, &result.CategoryId, &result.Description, &result.InterviewerId, &result.IsFeatured)
+        results = append(results, result)
+    }
+    
+    util.CheckErr(err)
+    return results
 }
 
 func (repo *InterviewRepository) DeactivateInterview(id string) {
           var err error
-    dbConn := mysql.Connect()
-    stmt, err := dbConn.Prepare("UPDATE Interviews SET (IsActive) VALUES(?) WHERE Id = ? AND IsActive = ?")
+    stmt, err := interviewRepository.dbConnection.Prepare("UPDATE Interviews SET IsActive = ? WHERE Id = ? AND IsActive = ?")
     util.CheckErr(err)
     _, err = stmt.Exec(id, false, true)
     util.CheckErr(err)
