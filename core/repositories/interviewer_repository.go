@@ -28,7 +28,7 @@ func (repo *InterviewerRepository) CreateInterviewer(interviewer *models.Intervi
     var err error
     stmt, err := interviewerRepository.dbConnection.Prepare("INSERT INTO Interviewers SET Id=?, DateJoined=?, UserId=?,Ranking=?, Summary=?")
     util.CheckErr(err)
-    _, err = stmt.Exec(util.GenerateUUID(), time.Now().Format(time.RFC3339), interviewer.UserId, -1, interviewer.Summary)
+    _, err = stmt.Exec(util.GenerateUUID(), time.Now().Format(time.RFC3339), interviewer.User.Id, -1, interviewer.Summary)
     util.CheckErr(err)
 }
 
@@ -52,24 +52,66 @@ func (repo *InterviewerRepository) UpdateInterviewerRanking(ranking int, id stri
 func (repo *InterviewerRepository) GetInterviewerById(id string) (models.Interviewer){
     
     var result models.Interviewer
-    stmt, err := interviewerRepository.dbConnection.Prepare("SELECT Id, UserId, Ranking, DateJoined, Summary FROM Interviewers WHERE Id = ?")
+    stmt, err := interviewerRepository.dbConnection.Prepare(`SELECT Interviewer.Id, 
+                                                            User.Username, 
+                                                            User.Id,
+                                                            User.Name,
+                                                            User.Surname,
+                                                            User.Datejoined,
+                                                            Interviewer.Ranking, 
+                                                            Interviewer.DateJoined, 
+                                                            Interviewer.Summary 
+                                                            FROM Interviewers as Interviewer
+                                                            INNER JOIN Users as User on 
+                                                            User.Id = Interviewer.UserId
+                                                            WHERE Interviewer.Id = ?`)
     util.CheckErr(err)
+    
     row := stmt.QueryRow(id)
-    err = row.Scan(&result.Id, &result.UserId, &result.Ranking, &result.DateJoined, &result.Summary)
+    
+    err = row.Scan(&result.Id, 
+                    &result.User.Username,  
+                    &result.User.Id,
+                    &result.User.Name, 
+                    &result.User.Surname, 
+                    &result.User.DateJoined, 
+                    &result.Ranking, 
+                    &result.DateJoined, 
+                    &result.Summary)
+                    
     util.CheckErr(err)
     return result
 }
 
 func (repo *InterviewerRepository) GetInterviewerByName(name string) ([]models.Interviewer){
-    query := "SELECT Id, UserId, Ranking, DateJoined, Summary FROM Interviewers WHERE Name = ?"      
     var results  []models.Interviewer
-    stmt, err := interviewerRepository.dbConnection.Prepare(query)
+        stmt, err := interviewerRepository.dbConnection.Prepare(`SELECT Interviewer.Id, 
+                                                            User.Username, 
+                                                            User.Id,
+                                                            User.Name,
+                                                            User.Surname,
+                                                            User.Datejoined,
+                                                            Interviewer.Ranking, 
+                                                            Interviewer.DateJoined, 
+                                                            Interviewer.Summary 
+                                                            FROM Interviewers as Interviewer
+                                                            INNER JOIN Users as User on 
+                                                            User.Id = Interviewer.UserId
+                                                            WHERE User.Username = ?`)
     util.CheckErr(err)
     rows, err := stmt.Query(name)
     
     for rows.Next(){
         var result models.Interviewer
-        err = rows.Scan(&result.Id, &result.UserId, &result.Ranking, &result.DateJoined, &result.Summary)
+        err = rows.Scan(&result.Id, 
+                    &result.User.Username,  
+                    &result.User.Id,
+                    &result.User.Name, 
+                    &result.User.Surname, 
+                    &result.User.DateJoined, 
+                    &result.Ranking, 
+                    &result.DateJoined, 
+                    &result.Summary)
         
         results = append(results, result)
     }
