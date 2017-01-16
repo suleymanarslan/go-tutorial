@@ -1,20 +1,21 @@
 package authentication
 
 import (
-	"hoditgo/core/redis"
-	"hoditgo/services/models"
-	"hoditgo/settings"
 	"bufio"
+	"bytes"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	jwt "github.com/dgrijalva/jwt-go"
-	"os"
-	"time"
+	"hoditgo/core/redis"
 	"hoditgo/core/repositories"
-	"bytes"
+	"hoditgo/services/models"
+	"hoditgo/settings"
+	"os"
 	"path/filepath"
 	"strings"
+	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 type JWTAuthenticationBackend struct {
@@ -42,9 +43,10 @@ func InitJWTAuthenticationBackend() *JWTAuthenticationBackend {
 
 func (backend *JWTAuthenticationBackend) GenerateToken(userUUID string) (string, error) {
 	token := jwt.New(jwt.SigningMethodRS512)
-	token.Claims["exp"] = time.Now().Add(time.Hour * time.Duration(settings.Get().JWTExpirationDelta)).Unix()
-	token.Claims["iat"] = time.Now().Unix()
-	token.Claims["sub"] = userUUID
+	claims := token.Claims.(jwt.MapClaims)
+	claims["exp"] = time.Now().Add(time.Hour * time.Duration(settings.Get().JWTExpirationDelta)).Unix()
+	claims["iat"] = time.Now().Unix()
+	claims["sub"] = userUUID
 	tokenString, err := token.SignedString(backend.privateKey)
 	if err != nil {
 		panic(err)
@@ -55,7 +57,7 @@ func (backend *JWTAuthenticationBackend) GenerateToken(userUUID string) (string,
 
 func (backend *JWTAuthenticationBackend) Authenticate(user *models.User) bool {
 	userBackEnd := repositories.InitUserRepository()
-    isUserExists := userBackEnd.CheckUser(user.Email, user.Password)
+	isUserExists := userBackEnd.CheckUser(user.Email, user.Password)
 	return isUserExists
 }
 
@@ -72,7 +74,8 @@ func (backend *JWTAuthenticationBackend) getTokenRemainingValidity(timestamp int
 
 func (backend *JWTAuthenticationBackend) Logout(tokenString string, token *jwt.Token) error {
 	redisConn := redis.Connect()
-	return redisConn.SetValue(tokenString, tokenString, backend.getTokenRemainingValidity(token.Claims["exp"]))
+	claims := token.Claims.(jwt.MapClaims)
+	return redisConn.SetValue(tokenString, tokenString, backend.getTokenRemainingValidity(claims["exp"]))
 }
 
 func (backend *JWTAuthenticationBackend) IsInBlacklist(token string) bool {
