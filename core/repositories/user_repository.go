@@ -31,7 +31,7 @@ func (repo *UserRepository) CreateUser(user *models.User) {
     hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
     stmt, err :=  userRepository.dbConnection.Prepare("INSERT INTO Users SET Id=?,Username=?,Password=?,Email=?, Name=?, Surname=?, DateJoined=?, IsActive=?")
     util.CheckErr(err)
-    _, err = stmt.Exec(util.GenerateUUID(), user.Username, hashedPassword, user.Email, user.Name, user.Surname, time.Now().Format(time.RFC3339), true)
+    _, err = stmt.Exec(util.GenerateUUID(), user.Username, hashedPassword, user.Email, user.Name, user.Surname, time.Now(), true)
     util.CheckErr(err)
 }
 
