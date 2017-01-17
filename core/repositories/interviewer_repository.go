@@ -28,7 +28,7 @@ func (repo *InterviewerRepository) CreateInterviewer(interviewer *models.Intervi
     var err error
     stmt, err := interviewerRepository.dbConnection.Prepare("INSERT INTO Interviewers SET Id=?, DateJoined=?, UserId=?,Ranking=?, Summary=?")
     util.CheckErr(err)
-    _, err = stmt.Exec(util.GenerateUUID(), time.Now().Format(time.RFC3339), interviewer.User.Id, -1, interviewer.Summary)
+    _, err = stmt.Exec(util.GenerateUUID(), time.Now(), interviewer.User.Id, -1, interviewer.Summary)
     util.CheckErr(err)
 }
 
